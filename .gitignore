@@ -7,3 +7,5 @@ Checkpoints/model_epoch_1.pt
 /HuggingFace_Upload/Pretrain/raptor-hf/
 /Finetune/lora_finetuned_koVast/
 /HuggingFace_Upload/Finetune/hf_repo/
+__pycache__/
+*.pyc

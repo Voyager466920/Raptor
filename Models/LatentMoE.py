@@ -59,15 +59,24 @@ class MultiHeadLatentAttention(nn.Module):
         if kv_cache is not None:
             k = torch.cat([kv_cache[0], k], dim=2)
             v = torch.cat([kv_cache[1], v], dim=2)
-        causal_mask = torch.triu(
-            torch.ones((total_k, total_k), dtype=torch.bool, device=x.device), diagonal=1
-        ).unsqueeze(0).unsqueeze(1)[:, :, -s:, :]
-
-        out = F.scaled_dot_product_attention(
-            q, k, v,
-            attn_mask=causal_mask,
-            dropout_p=self.dropout.p if self.training else 0.0,
-        )
+        # PyTorch SDPA boolean masks use True for positions that are allowed to
+        # participate in attention.  The previous upper-triangular mask did the
+        # opposite of causal language modelling and exposed future tokens.
+        if kv_cache is None:
+            out = F.scaled_dot_product_attention(
+                q, k, v,
+                dropout_p=self.dropout.p if self.training else 0.0,
+                is_causal=True,
+            )
+        else:
+            allowed = torch.arange(total_k, device=x.device).unsqueeze(0) <= (
+                past_len + torch.arange(s, device=x.device).unsqueeze(1)
+            )
+            out = F.scaled_dot_product_attention(
+                q, k, v,
+                attn_mask=allowed.unsqueeze(0).unsqueeze(0),
+                dropout_p=self.dropout.p if self.training else 0.0,
+            )
         out = out.transpose(1, 2).contiguous().view(b, s, self.dim)
         out = self.out_proj(out)
         if use_cache:

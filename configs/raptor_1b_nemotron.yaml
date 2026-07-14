@@ -1,0 +1,40 @@
+output_dir: /home/hoon/joonha_llm/runs/raptor_1b_nemotron
+
+model:
+  dim: 1024
+  latent_dim: 256
+  expert_hidden_dim: 2816
+  num_layers: 18
+  num_heads: 16
+  num_experts: 6
+  top_k: 2
+  max_seq_len: 2048
+  rope_theta: 10000.0
+  load_balance_weight: 0.01
+  router_z_weight: 0.001
+  gradient_checkpointing: false
+
+data:
+  tokenizer: /home/hoon/joonha_llm/KoRaptor/Tokenizer/spm_wiki_book_owt.model
+  train_manifest: /home/hoon/joonha_llm/data/nemotron_cc/train.txt
+  validation_manifest: /home/hoon/joonha_llm/data/nemotron_cc/validation.txt
+  num_workers: 8
+  prefetch_factor: 2
+  document_shuffle_buffer: 512
+
+training:
+  seed: 466920
+  micro_batch_size: 16
+  gradient_accumulation_steps: 16
+  max_steps: 38147        # ~20B tokens at 524,288 tokens/optimizer step
+  warmup_steps: 400
+  learning_rate: 0.0002
+  min_learning_rate: 0.00002
+  betas: [0.9, 0.95]
+  adam_eps: 0.00000001
+  weight_decay: 0.1
+  grad_clip: 1.0
+  log_interval: 5
+  eval_interval: 500
+  eval_batches: 50
+  save_interval: 1000
